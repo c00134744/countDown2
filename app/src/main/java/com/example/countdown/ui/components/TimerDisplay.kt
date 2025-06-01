@@ -67,7 +67,7 @@ private fun MainTimeDisplay(timerState: TimerState) {
     Text(
         text = timeText,
         style = MaterialTheme.typography.displayLarge.copy(
-            fontSize = 48.sp,
+            fontSize = 72.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 2.sp
         ),

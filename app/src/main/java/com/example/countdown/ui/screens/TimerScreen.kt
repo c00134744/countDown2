@@ -222,35 +222,22 @@ private fun MainTimerSection(
             )
         }
 
-        // Layer 2: TimerDisplay and ControlButton, overlaid
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            // 时间显示
-            when (timerState.status) {
-                TimerStatus.IDLE -> {
-                    if (timerState.totalTimeMs > 0) {
-                        TimerDisplay(timerState = timerState)
-                    } else {
-                        TimeSetupHint()
-                    }
-                }
-                TimerStatus.FINISHED -> {
-                    TimerFinishedDisplay()
-                }
-                else -> {
-                    TimerDisplay(timerState = timerState)
-                }
-            }
-            
-            // 控制按钮
-            ControlButton(
-                timerState = timerState,
-                onAction = onAction,
-                modifier = Modifier.size(80.dp)
-            )
-        }
+        // Layer 2: TimerDisplay (恢复到圆形轨道中心)
+        TimerDisplay(
+            timerState = timerState,
+            modifier = Modifier.align(Alignment.Center) // 恢复到圆心位置
+        )
+
+        // Layer 3: ControlButton (移动到红框位置，调整尺寸)
+        ControlButton(
+            timerState = timerState,
+            onAction = onAction,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth(0.45f)     // 增加宽度，匹配红框
+                .height(66.dp)           // 增加高度，匹配红框
+                .offset(y = (-250).dp)   // 继续向上移动，更接近目标位置
+        )
     }
 }
 

@@ -6,7 +6,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -61,7 +61,7 @@ fun ControlButton(
             }
             .background(
                 color = buttonStateLogic.baseColor.copy(alpha = backgroundAlpha),
-                shape = CircleShape
+                shape = RoundedCornerShape(16.dp)
             )
             .combinedClickable(
                 interactionSource = interactionSource,
