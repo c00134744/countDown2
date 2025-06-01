@@ -216,3 +216,75 @@ object ErrorHandler {
 ### 4. 批量更新模式
 - UI更新频率控制（60fps）
 - 状态变更批量处理 
+
+### UI布局模式
+```kotlin
+@Composable
+fun TimerScreen(viewModel: TimerViewModel) {
+    Column {
+        CircularTimerView(
+            timerState = timerState,
+            onTimeSet = viewModel::setTime
+        )
+        TimerDisplay(timerState = timerState)
+        ControlButton(
+            timerState = timerState,
+            onAction = viewModel::handleAction
+        )
+    }
+}
+```
+
+#### 新增：分层Box布局模式 (2025-06-02)
+**应用场景**: 精确控制UI元素位置，实现复杂的重叠布局
+
+**设计模式**:
+```kotlin
+@Composable
+fun MainTimerSection(
+    timerState: TimerState,
+    onTimeSet: (Long) -> Unit,
+    onAction: (TimerAction) -> Unit,
+    onDragAngle: (Float) -> Unit
+) {
+    Box(
+        modifier = Modifier.size(350.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Layer 1: 背景圆形轨道
+        CircularTimerView(
+            timerState = timerState,
+            onTimeSet = onTimeSet,
+            size = 350.dp
+        )
+        
+        // Layer 2: 中心时间显示
+        TimerDisplay(
+            timerState = timerState,
+            modifier = Modifier.align(Alignment.Center)
+        )
+        
+        // Layer 3: 精确定位的控制按钮
+        ControlButton(
+            timerState = timerState,
+            onAction = onAction,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth(0.55f)
+                .height(56.dp)
+                .offset(y = (-250).dp) // 精确偏移定位
+        )
+    }
+}
+```
+
+**优势**:
+- 精确控制元素位置
+- 支持重叠布局
+- 灵活的对齐方式
+- 易于维护和调整
+
+**使用场景**:
+- 需要精确控制位置的UI元素
+- 圆形布局中的元素定位
+- 复杂的视觉层次设计 

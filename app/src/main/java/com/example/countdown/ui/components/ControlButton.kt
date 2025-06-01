@@ -60,7 +60,7 @@ fun ControlButton(
                 scaleY = scale
             }
             .background(
-                color = buttonStateLogic.baseColor.copy(alpha = backgroundAlpha),
+                color = buttonStateLogic.baseColor,
                 shape = RoundedCornerShape(16.dp)
             )
             .combinedClickable(
