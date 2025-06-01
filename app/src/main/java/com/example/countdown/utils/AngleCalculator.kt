@@ -9,8 +9,8 @@ import kotlin.math.*
 object AngleCalculator {
     
     // 圆形轨道的角度范围
-    const val START_ANGLE = 225f        // 起点角度（左下角）
-    const val END_ANGLE = 315f          // 终点角度（右下角）
+    const val START_ANGLE = 135f        // 起点角度（左上角）
+    const val END_ANGLE = 45f           // 终点角度（右上角）
     const val TOTAL_ANGLE = 270f        // 总角度范围
     
     // 最大计时时间（45分钟）
@@ -42,27 +42,18 @@ object AngleCalculator {
     }
     
     /**
-     * 将角度限制在有效范围内（225° - 315°）
+     * 将角度限制在有效范围内（135° - 45°，跨越360°）
      * @param angle 输入角度
      * @return 限制后的角度
      */
     fun constrainAngle(angle: Float): Float {
         return when {
-            // 处理跨越0度的情况
+            // 有效范围：135° - 360° 和 0° - 45°
             angle >= START_ANGLE || angle <= END_ANGLE -> {
-                if (angle >= START_ANGLE) {
-                    angle
-                } else if (angle <= END_ANGLE) {
-                    angle
-                } else {
-                    // 选择最近的边界
-                    val distToStart = abs(angle - START_ANGLE)
-                    val distToEnd = abs(angle - END_ANGLE)
-                    if (distToStart < distToEnd) START_ANGLE else END_ANGLE
-                }
+                angle
             }
-            // 角度在无效范围内，选择最近的有效角度
-            angle < START_ANGLE && angle > END_ANGLE -> {
+            // 角度在无效范围内（45° - 135°），选择最近的有效角度
+            angle > END_ANGLE && angle < START_ANGLE -> {
                 val distToStart = abs(angle - START_ANGLE)
                 val distToEnd = abs(angle - END_ANGLE)
                 if (distToStart < distToEnd) START_ANGLE else END_ANGLE
@@ -73,7 +64,7 @@ object AngleCalculator {
     
     /**
      * 将角度转换为时间（毫秒）
-     * @param angle 角度值（225° - 315°）
+     * @param angle 角度值（135° - 45°，跨越360°）
      * @return 对应的时间（毫秒）
      */
     fun angleToTime(angle: Float): Long {
@@ -83,7 +74,7 @@ object AngleCalculator {
         val relativeAngle = if (constrainedAngle >= START_ANGLE) {
             constrainedAngle - START_ANGLE
         } else {
-            // 处理跨越360度的情况
+            // 处理跨越360度的情况：0° - 45° 对应 225° - 270°
             (360f - START_ANGLE) + constrainedAngle
         }
         

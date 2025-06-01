@@ -35,6 +35,31 @@
 - 无需额外权限，符合Android 15规范
 - 适合倒计时应用的使用场景
 
+#### 第三轮：UI界面优化
+**任务**: 根据用户需求优化UI设计和布局
+
+**用户需求**:
+- 计时轨道的缺口应该面向下方
+- 用户控制按钮应该嵌入在轨道缺口的位置
+- 保持开始、暂停、停止三种功能合并在一个按钮上
+
+**实施方案**:
+- ✅ **AngleCalculator.kt角度调整** - 将轨道缺口从左下-右下改为左上-右上，缺口朝向下方
+- ✅ **TimerScreen.kt布局重构** - 将控制按钮从底部区域移动到圆形计时器中心
+- ✅ **界面布局优化** - 简化底部区域，只保留操作提示
+- ✅ **构建验证** - 确认UI修改后应用可以正常构建
+
+**技术细节**:
+- 轨道角度范围：从225°-315°改为135°-45°（跨越360°）
+- 按钮位置：嵌入到圆形计时器中心区域
+- 布局结构：时间显示 + 控制按钮垂直排列在中心
+
+#### 第四轮：控制按钮交互修复 (最终成功方案 - 第5轮，结合服务逻辑修复)
+**任务**: 修复控制按钮在计时过程中无法响应，以及从暂停恢复计时不准确的问题。
+
+**最终问题分析**:\n1.  **按钮响应问题 (主要)**: `ControlButton` 中原先使用的 `.pointerInput { detectTapGestures(...) }` 在计时器运行状态（RUNNING/PAUSED）下无法正确处理单击或长按事件，即使状态传递正确。这可能与其内部状态管理（如`tryAwaitRelease`）在Composable频繁重组（如`TimerDisplay`更新）时的不稳定性有关。\n2.  **继续计时不准确**: `TimerForegroundService` 在处理从PAUSED状态恢复计时时，未能正确使用传入的剩余时间来重新初始化`CountDownTimer`，导致从总时长重新开始计时。\n\n**最终修复方案**:\n1.  **按钮手势重构 (`ControlButton.kt`)**: \n    *   ✅ 使用 `Modifier.combinedClickable` 替换了原先的 `pointerInput { detectTapGestures(...) }`。此API更高级、更稳定，能同时处理单击和长按，并正确响应于所有计时器状态。\n    *   相关的内部状态管理（如`isPressed`）被简化或移除，依赖`combinedClickable`的机制。\n2.  **服务逻辑修正 (`TimerForegroundService.kt`)**: \n    *   ✅ 完全 переделал `TimerForegroundService`，确保其统一使用 `android.os.CountDownTimer`。\n    *   ✅ 重写了 `onStartCommand` 逻辑：现在它总是先停止任何现存的 `countDownTimer`，然后使用从`Intent`中获取的（有效的）`remainingTimeMs` 和 `totalTimeMs` 来更新服务内部状态，并调用 `startActualTimer`。\n    *   ✅ `startActualTimer(timeToCountDownMs: Long)` 方法现在清晰地用传入的倒计时时长启动新的 `CountDownTimer`。\n    *   ✅ `pauseTimer()` 方法仅取消 `countDownTimer` 并更新 `isTimerCurrentlyRunning` 状态，`serviceRemainingTimeMs` 保留暂停时的值。\n    *   ✅ `userInitiatedStop()` 方法正确处理用户停止操作，清零时间并停止服务。\n    *   ✅ 通知逻辑 (`updateNotificationOnStateChange` 和 `getCurrentNotificationBuilder`) 能够根据 `isTimerCurrentlyRunning` 和 `serviceRemainingTimeMs` 正确显示"运行中"、"已暂停"或"计时完成"。\n3.  **ViewModel 适配 (`TimerViewModel.kt`)**: \n    *   ✅ 对 `timerService?.stopTimer()` 的调用已更新为 `timerService?.userInitiatedStop()` 以匹配服务层接口的更改。\n\n**构建与测试结果**:\n- ✅ 应用成功构建。\n- ✅ **所有核心功能均已通过用户真机测试并正常工作**：\n    - IDLE状态：启动正常。\n    - RUNNING状态：单击暂停、长按停止均正常，UI更新正确。\n    - PAUSED状态：单击继续（从正确的剩余时间开始）、长按停止均正常，UI更新正确。\n    - 计时器自然完成行为正常。\n
+**结论**: 通过组合使用更稳健的 `Modifier.combinedClickable` 进行手势处理，并彻底重构和修正 `TimerForegroundService` 的计时和状态管理逻辑，成功解决了所有已知问题。
+
 ### 当前项目状态
 
 **开发阶段**: 维护和优化阶段

@@ -126,6 +126,23 @@
   - 解决：将foregroundServiceType改为shortService
   - 影响：应用启动后不再崩溃，前台服务正常运行
 
+#### UI界面优化 (100%)
+- ✅ **轨道缺口位置调整** - 将缺口从左下-右下改为朝向下方
+- ✅ **控制按钮位置优化** - 从底部区域移动到圆形计时器中心
+- ✅ **布局结构简化** - 优化界面层次，提升用户体验
+- ✅ **角度计算逻辑更新** - 适配新的轨道角度范围（135°-45°）
+
+#### 控制按钮交互与计时逻辑修复 (100% - 最终成功方案)
+- ✅ **按钮手势问题** - `ControlButton`在计时状态下（RUNNING/PAUSED）对单击和长按无响应。
+  - 问题：原先使用的 `.pointerInput { detectTapGestures(...) }` 实现，在Composable频繁重组的环境下表现不稳定。
+  - 解决：将 `ControlButton` 的手势处理重构为使用 `Modifier.combinedClickable`，它能更稳定地处理单击和长按，并解决了在所有状态下的响应问题。
+- ✅ **"继续计时"逻辑错误** - 从PAUSED状态恢复计时时，计时器从总时长而非剩余时长开始。
+  - 问题：`TimerForegroundService` 在 `onStartCommand` 中未能正确使用 `Intent` 传入的 `remainingTimeMs` 来恢复 `CountDownTimer`。
+  - 解决：彻底重构了 `TimerForegroundService`，确保统一使用 `CountDownTimer`，并修正了 `onStartCommand` 和 `startActualTimer` 的逻辑，以正确处理计时器的启动、暂停、恢复（从正确的剩余时间）和停止。通知逻辑也一并更新。
+- ✅ **ViewModel适配** - `TimerViewModel` 中对服务停止方法的调用已更新为 `userInitiatedStop()`。
+
+**测试结果**：所有核心功能（启动、暂停、从正确时间点继续、长按停止、计时完成）均已通过用户真机测试，功能正常，UI反馈正确。
+
 ## 待完成工作
 
 ### 🔄 进行中的工作 (0%)

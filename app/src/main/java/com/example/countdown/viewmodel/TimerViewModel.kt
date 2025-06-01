@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.countdown.data.model.TimerAction
@@ -107,7 +108,8 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
      */
     private fun stopTimer() {
         repository.stopTimer()
-        stopTimerService()
+        timerService?.userInitiatedStop()
+        stopTimerServiceItself()
     }
     
     /**
@@ -115,7 +117,8 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
      */
     private fun resetTimer() {
         repository.resetTimer()
-        stopTimerService()
+        timerService?.userInitiatedStop()
+        stopTimerServiceItself()
     }
     
     /**
@@ -145,17 +148,18 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
     }
     
     /**
-     * 停止计时服务
+     * 停止计时服务 (核心逻辑，停止服务本身和解绑)
      */
-    private fun stopTimerService() {
+    private fun stopTimerServiceItself() {
         val context = getApplication<Application>()
-        
-        // 停止服务
-        timerService?.stopTimer()
         
         // 解绑服务
         if (isServiceBound) {
-            context.unbindService(serviceConnection)
+            try {
+                context.unbindService(serviceConnection)
+            } catch (e: IllegalArgumentException) {
+                Log.w(TAG, "Service not registered or already unbound: ${e.message}")
+            }
             isServiceBound = false
         }
         
@@ -196,7 +200,7 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
      * 清除所有数据
      */
     fun clearAllData() {
-        stopTimerService()
+        stopTimerServiceItself()
         repository.clearAllData()
     }
     
@@ -241,17 +245,28 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
     
     override fun onCleared() {
         super.onCleared()
-        
+        Log.d(TAG, "ViewModel onCleared")
         // 清理资源
         if (isServiceBound) {
             val context = getApplication<Application>()
-            context.unbindService(serviceConnection)
+            try {
+                context.unbindService(serviceConnection)
+            } catch (e: IllegalArgumentException) {
+                 Log.w(TAG, "Service not registered or already unbound in onCleared: ${e.message}")
+            }
+            isServiceBound = false
         }
         
-        // 如果不是在计时状态，停止服务
+        // 如果不是在计时状态，确保服务也停止
         val currentState = repository.getCurrentState()
         if (currentState.status != TimerStatus.RUNNING) {
-            stopTimerService()
+            timerService?.userInitiatedStop()
+            stopTimerServiceItself()
         }
+        timerService = null
+    }
+    
+    companion object {
+        private const val TAG = "TimerViewModel"
     }
 }

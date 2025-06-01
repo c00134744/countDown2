@@ -33,7 +33,6 @@ fun CircularTimerView(
     modifier: Modifier = Modifier,
     size: androidx.compose.ui.unit.Dp = 300.dp
 ) {
-    val density = LocalDensity.current
     var isDragging by remember { mutableStateOf(false) }
     var dragAngle by remember { mutableStateOf(timerState.angle) }
     
@@ -44,6 +43,7 @@ fun CircularTimerView(
         }
     }
     
+    // 拖拽手势现在总是启用，因为按钮已分离
     Box(
         modifier = modifier.size(size),
         contentAlignment = Alignment.Center
@@ -52,25 +52,30 @@ fun CircularTimerView(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(CircleShape)
-                .pointerInput(Unit) {
+                .pointerInput(Unit) { // 直接启用手势检测
                     detectDragGestures(
                         onDragStart = { offset ->
-                            isDragging = true
                             val center = Offset(this.size.width / 2f, this.size.height / 2f)
+                            // 移除了按钮区域检测，因为按钮已分离
+                            isDragging = true
                             val angle = AngleCalculator.coordinateToAngle(
                                 offset.x, offset.y, center.x, center.y
                             )
                             dragAngle = AngleCalculator.constrainAngle(angle)
                         },
                         onDragEnd = {
-                            isDragging = false
-                            val timeMs = AngleCalculator.angleToTime(dragAngle)
-                            onTimeSet(timeMs)
+                            if (isDragging) {
+                                isDragging = false
+                                val timeMs = AngleCalculator.angleToTime(dragAngle)
+                                onTimeSet(timeMs)
+                            }
                         },
                         onDrag = { change, _ ->
-                            val center = Offset(this.size.width / 2f, this.size.height / 2f)
+                            if (!isDragging) return@detectDragGestures
+                            
                             val angle = AngleCalculator.coordinateToAngle(
-                                change.position.x, change.position.y, center.x, center.y
+                                change.position.x, change.position.y, 
+                                this.size.width / 2f, this.size.height / 2f
                             )
                             dragAngle = AngleCalculator.constrainAngle(angle)
                             

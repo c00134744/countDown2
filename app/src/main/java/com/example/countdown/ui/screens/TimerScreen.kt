@@ -93,14 +93,12 @@ private fun PortraitLayout(
             timerState = timerState,
             onTimeSet = onTimeSet,
             onDragAngle = onDragAngle,
+            onAction = onAction,
             modifier = Modifier.weight(1f)
         )
         
-        // 底部控制区域
-        BottomControlSection(
-            timerState = timerState,
-            onAction = onAction
-        )
+        // 底部提示区域
+        BottomHintSection(timerState = timerState)
     }
 }
 
@@ -193,37 +191,26 @@ private fun MainTimerSection(
     timerState: com.example.countdown.data.model.TimerState,
     onTimeSet: (Long) -> Unit,
     onDragAngle: (Float) -> Unit,
+    onAction: (TimerAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(), // Parent Box for overall centering
         contentAlignment = Alignment.Center
     ) {
-        // 计时器动画效果
-        val scale by animateFloatAsState(
-            targetValue = when (timerState.status) {
-                TimerStatus.RUNNING -> 1.05f
-                TimerStatus.FINISHED -> 1.1f
-                else -> 1f
-            },
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow
-            )
-        )
-        
-        val rotation by animateFloatAsState(
-            targetValue = if (timerState.status == TimerStatus.FINISHED) 360f else 0f,
-            animationSpec = tween(1000)
-        )
+        // Layer 1: CircularTimerView (Temporarily without animation for diagnosis)
+        // val scale by animateFloatAsState(...)
+        // val rotation by animateFloatAsState(...)
         
         Box(
             modifier = Modifier
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                    rotationZ = rotation
-                }
+                // .graphicsLayer { // Temporarily removed for diagnosis
+                //     scaleX = scale
+                //     scaleY = scale
+                //     rotationZ = rotation
+                // }
+                .size(320.dp), // Define the size for the Box
+            contentAlignment = Alignment.Center
         ) {
             CircularTimerView(
                 timerState = timerState,
@@ -231,32 +218,38 @@ private fun MainTimerSection(
                     onTimeSet(timeMs)
                     onDragAngle(com.example.countdown.utils.AngleCalculator.timeToAngle(timeMs))
                 },
-                size = 320.dp
+                size = 320.dp // CircularTimerView fills this Box
             )
-            
-            // 中央显示区域
-            Box(
-                modifier = Modifier
-                    .size(320.dp)
-                    .padding(80.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                when (timerState.status) {
-                    TimerStatus.IDLE -> {
-                        if (timerState.totalTimeMs > 0) {
-                            TimerDisplay(timerState = timerState)
-                        } else {
-                            TimeSetupHint()
-                        }
-                    }
-                    TimerStatus.FINISHED -> {
-                        TimerFinishedDisplay()
-                    }
-                    else -> {
+        }
+
+        // Layer 2: TimerDisplay and ControlButton, overlaid
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            // 时间显示
+            when (timerState.status) {
+                TimerStatus.IDLE -> {
+                    if (timerState.totalTimeMs > 0) {
                         TimerDisplay(timerState = timerState)
+                    } else {
+                        TimeSetupHint()
                     }
                 }
+                TimerStatus.FINISHED -> {
+                    TimerFinishedDisplay()
+                }
+                else -> {
+                    TimerDisplay(timerState = timerState)
+                }
             }
+            
+            // 控制按钮
+            ControlButton(
+                timerState = timerState,
+                onAction = onAction,
+                modifier = Modifier.size(80.dp)
+            )
         }
     }
 }
@@ -287,6 +280,23 @@ private fun BottomControlSection(
         ) {
             ControlHint(timerState = timerState)
         }
+    }
+}
+
+/**
+ * 底部提示区域
+ */
+@Composable
+private fun BottomHintSection(
+    timerState: com.example.countdown.data.model.TimerState
+) {
+    // 操作提示
+    AnimatedVisibility(
+        visible = true,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        ControlHint(timerState = timerState)
     }
 }
 
