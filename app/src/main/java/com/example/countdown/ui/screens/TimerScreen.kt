@@ -166,20 +166,20 @@ private fun TopStatusSection(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // 应用标题
-        Text(
+        /*Text(
             text = "倒计时",
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onBackground
-        )
+        )*/
         
         // 状态指示器
-        AnimatedVisibility(
+        /*AnimatedVisibility(
             visible = timerState.status != TimerStatus.IDLE,
             enter = slideInVertically() + fadeIn(),
             exit = slideOutVertically() + fadeOut()
         ) {
             StatusIndicatorCard(timerState = timerState)
-        }
+        }*/
     }
 }
 
@@ -209,7 +209,7 @@ private fun MainTimerSection(
                 //     scaleY = scale
                 //     rotationZ = rotation
                 // }
-                .size(320.dp), // Define the size for the Box
+                .size(350.dp), // Define the size for the Box
             contentAlignment = Alignment.Center
         ) {
             CircularTimerView(
@@ -218,7 +218,7 @@ private fun MainTimerSection(
                     onTimeSet(timeMs)
                     onDragAngle(com.example.countdown.utils.AngleCalculator.timeToAngle(timeMs))
                 },
-                size = 320.dp // CircularTimerView fills this Box
+                size = 350.dp // CircularTimerView fills this Box
             )
         }
 
@@ -273,13 +273,13 @@ private fun BottomControlSection(
         )
         
         // 操作提示
-        AnimatedVisibility(
+        /*AnimatedVisibility(
             visible = true,
             enter = fadeIn(),
             exit = fadeOut()
         ) {
             ControlHint(timerState = timerState)
-        }
+        }*/
     }
 }
 
@@ -291,13 +291,13 @@ private fun BottomHintSection(
     timerState: com.example.countdown.data.model.TimerState
 ) {
     // 操作提示
-    AnimatedVisibility(
+    /*AnimatedVisibility(
         visible = true,
         enter = fadeIn(),
         exit = fadeOut()
     ) {
         ControlHint(timerState = timerState)
-    }
+    }*/
 }
 
 /**

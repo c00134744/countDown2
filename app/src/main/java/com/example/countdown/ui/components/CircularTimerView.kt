@@ -117,7 +117,7 @@ private fun DrawScope.drawCircularTimer(
     drawDragHandle(center, radius, currentAngle, isDragging)
     
     // 绘制中心装饰
-    drawCenterDecoration(center)
+    // drawCenterDecoration(center)
 }
 
 /**

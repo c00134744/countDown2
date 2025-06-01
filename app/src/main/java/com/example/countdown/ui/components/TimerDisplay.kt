@@ -33,7 +33,7 @@ fun TimerDisplay(
         // 主要时间显示
         MainTimeDisplay(timerState = timerState)
         
-        Spacer(modifier = Modifier.height(8.dp))
+        /*Spacer(modifier = Modifier.height(8.dp))
         
         // 状态指示器
         StatusIndicator(timerState = timerState)
@@ -42,7 +42,7 @@ fun TimerDisplay(
         if (timerState.status != TimerStatus.IDLE) {
             Spacer(modifier = Modifier.height(4.dp))
             ProgressInfo(timerState = timerState)
-        }
+        }*/
     }
 }
 

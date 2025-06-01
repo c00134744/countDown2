@@ -1,8 +1,10 @@
 package com.example.countdown.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -14,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -37,6 +40,11 @@ fun ControlButton(
     modifier: Modifier = Modifier
 ) {
     val hapticFeedback = LocalHapticFeedback.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val scale by animateFloatAsState(targetValue = if (isPressed) 0.9f else 1.0f, label = "buttonScale")
+    val backgroundAlpha by animateFloatAsState(targetValue = if (isPressed) 0.8f else 0.6f, label = "buttonAlpha")
 
     val buttonStateLogic = when (timerState.status) {
         TimerStatus.IDLE -> if (timerState.totalTimeMs > 0) ButtonDisplayState.Start else ButtonDisplayState.Disabled
@@ -47,13 +55,16 @@ fun ControlButton(
 
     Box(
         modifier = modifier
-            .size(80.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
             .background(
-                color = buttonStateLogic.baseColor.copy(alpha = 0.6f),
+                color = buttonStateLogic.baseColor.copy(alpha = backgroundAlpha),
                 shape = CircleShape
             )
             .combinedClickable(
-                interactionSource = remember { MutableInteractionSource() },
+                interactionSource = interactionSource,
                 indication = androidx.compose.material.ripple.rememberRipple(bounded = false, radius = 40.dp),
                 onClick = {
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)

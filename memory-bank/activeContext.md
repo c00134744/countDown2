@@ -60,6 +60,69 @@
 **最终问题分析**:\n1.  **按钮响应问题 (主要)**: `ControlButton` 中原先使用的 `.pointerInput { detectTapGestures(...) }` 在计时器运行状态（RUNNING/PAUSED）下无法正确处理单击或长按事件，即使状态传递正确。这可能与其内部状态管理（如`tryAwaitRelease`）在Composable频繁重组（如`TimerDisplay`更新）时的不稳定性有关。\n2.  **继续计时不准确**: `TimerForegroundService` 在处理从PAUSED状态恢复计时时，未能正确使用传入的剩余时间来重新初始化`CountDownTimer`，导致从总时长重新开始计时。\n\n**最终修复方案**:\n1.  **按钮手势重构 (`ControlButton.kt`)**: \n    *   ✅ 使用 `Modifier.combinedClickable` 替换了原先的 `pointerInput { detectTapGestures(...) }`。此API更高级、更稳定，能同时处理单击和长按，并正确响应于所有计时器状态。\n    *   相关的内部状态管理（如`isPressed`）被简化或移除，依赖`combinedClickable`的机制。\n2.  **服务逻辑修正 (`TimerForegroundService.kt`)**: \n    *   ✅ 完全 переделал `TimerForegroundService`，确保其统一使用 `android.os.CountDownTimer`。\n    *   ✅ 重写了 `onStartCommand` 逻辑：现在它总是先停止任何现存的 `countDownTimer`，然后使用从`Intent`中获取的（有效的）`remainingTimeMs` 和 `totalTimeMs` 来更新服务内部状态，并调用 `startActualTimer`。\n    *   ✅ `startActualTimer(timeToCountDownMs: Long)` 方法现在清晰地用传入的倒计时时长启动新的 `CountDownTimer`。\n    *   ✅ `pauseTimer()` 方法仅取消 `countDownTimer` 并更新 `isTimerCurrentlyRunning` 状态，`serviceRemainingTimeMs` 保留暂停时的值。\n    *   ✅ `userInitiatedStop()` 方法正确处理用户停止操作，清零时间并停止服务。\n    *   ✅ 通知逻辑 (`updateNotificationOnStateChange` 和 `getCurrentNotificationBuilder`) 能够根据 `isTimerCurrentlyRunning` 和 `serviceRemainingTimeMs` 正确显示"运行中"、"已暂停"或"计时完成"。\n3.  **ViewModel 适配 (`TimerViewModel.kt`)**: \n    *   ✅ 对 `timerService?.stopTimer()` 的调用已更新为 `timerService?.userInitiatedStop()` 以匹配服务层接口的更改。\n\n**构建与测试结果**:\n- ✅ 应用成功构建。\n- ✅ **所有核心功能均已通过用户真机测试并正常工作**：\n    - IDLE状态：启动正常。\n    - RUNNING状态：单击暂停、长按停止均正常，UI更新正确。\n    - PAUSED状态：单击继续（从正确的剩余时间开始）、长按停止均正常，UI更新正确。\n    - 计时器自然完成行为正常。\n
 **结论**: 通过组合使用更稳健的 `Modifier.combinedClickable` 进行手势处理，并彻底重构和修正 `TimerForegroundService` 的计时和状态管理逻辑，成功解决了所有已知问题。
 
+### 最近完成的工作 (2025-06-02)
+
+#### 第五轮：特定UI元素移除
+**任务**: 根据用户截图移除界面顶部的状态信息和底部的操作提示。
+**涉及文件**: `app/src/main/java/com/example/countdown/ui/screens/TimerScreen.kt`
+
+**变更详情**:
+- ✅ **移除顶部状态指示器**: 在 `TopStatusSection` 中注释掉了 `AnimatedVisibility` 及其内部的 `StatusIndicatorCard` 调用。
+- ✅ **移除底部操作提示 (竖屏)**: 在 `BottomHintSection` 中注释掉了 `AnimatedVisibility` 及其内部的 `ControlHint` 调用。
+- ✅ **移除底部操作提示 (横屏)**: 在 `BottomControlSection` 中注释掉了 `AnimatedVisibility` 及其内部的 `ControlHint` 调用。
+
+**结果**: 用户确认指定的UI元素已成功移除。用户提出了新的UI元素移除请求。
+
+### 最近完成的工作 (2025-06-02 - Phase 2)
+
+#### 第六轮：附加UI元素移除
+**任务**: 根据用户进一步请求，移除顶部标题和计时器内部的特定文本。
+**涉及文件**: 
+- `app/src/main/java/com/example/countdown/ui/screens/TimerScreen.kt`
+- `app/src/main/java/com/example/countdown/ui/components/TimerDisplay.kt`
+
+**变更详情**:
+- ✅ **移除顶部"倒计时"标题**: 在 `TimerScreen.kt` 的 `TopStatusSection` 中注释掉了 `Text("倒计时", ...)`。
+- ✅ **移除计时器内部文本**: 在 `TimerDisplay.kt` 的 `TimerDisplay` 函数中，注释掉了对 `StatusIndicator` 的调用以及包含 `ProgressInfo` 的 `if` 块 (及其相关的 `Spacer`)。
+
+**结果**: 用户确认这些UI元素已成功移除。用户提出了新的UI元素移除请求 (Phase 3)。
+
+### 最近完成的工作 (2025-06-02 - Phase 3)
+
+#### 第七轮：中心装饰点移除
+**任务**: 根据用户进一步请求，移除计时器轨道正中心的小的装饰性圆点。
+**涉及文件**: `app/src/main/java/com/example/countdown/ui/components/CircularTimerView.kt`
+
+**变更详情**:
+- ✅ **移除中心装饰点**: 在 `CircularTimerView.kt` 的 `drawCircularTimer` 函数中注释掉了对 `drawCenterDecoration(center)` 的调用。
+
+**结果**: 用户确认该UI元素已成功移除。用户提出了新的修改请求（扩大计时圈，恢复按钮按压效果）。
+
+### 最近完成的工作 (2025-06-02 - Phase 4)
+
+#### 第八轮：界面调整与优化
+**任务**: 根据用户请求，扩大计时圈，并恢复按钮按压的视觉反馈。
+**涉及文件**: 
+- `app/src/main/java/com/example/countdown/ui/screens/TimerScreen.kt`
+- `app/src/main/java/com/example/countdown/ui/components/ControlButton.kt`
+
+**变更详情**:
+- ✅ **扩大计时圈 (竖屏)**: 在 `TimerScreen.kt` 的 `MainTimerSection` 中，将 `CircularTimerView` 及其包裹 `Box` 的 `size` 从 `320.dp` 修改为 `350.dp`。
+- ✅ **增强按钮按压效果**: 在 `ControlButton.kt` 中，使用 `interactionSource.collectIsPressedAsState()` 结合 `animateFloatAsState` 为按钮增加了按压时的缩放效果 (scale 0.9) 和背景透明度增加效果 (alpha 0.6 -> 0.8)。
+
+**结果**: 用户确认界面调整成功。用户提出了新的修改请求（修改提醒时间为1s）。
+
+### 最近完成的工作 (2025-06-02 - Phase 5)
+
+#### 第九轮：提醒功能调整
+**任务**: 根据用户请求，修改倒计时完成时的提醒震动时长为1秒。
+**涉及文件**: `app/src/main/java/com/example/countdown/service/TimerForegroundService.kt`
+
+**变更详情**:
+- ✅ **修改震动时长**: 在 `TimerForegroundService.kt` 的 `triggerAlarm()` 方法中，将震动时长从 `500`ms 修改为 `1000`ms。
+
+**结果**: 用户确认提醒功能调整成功。用户提出了新的请求（分析和优化日志，移除不必要的debug代码）。
+
 ### 当前项目状态
 
 **开发阶段**: 维护和优化阶段
@@ -100,7 +163,10 @@ implementation("androidx.compose.material:material-icons-extended")
 ## 下一步计划
 
 ### 短期目标 (1-2周)
-1. **功能测试**
+1. **代码优化与清理**
+   - 分析运行中的日志并优化。
+   - 去掉代码中不必要的debug措施。
+2. **功能测试**
    - 在真机上测试所有核心功能
    - 验证后台计时准确性
    - 测试权限处理流程

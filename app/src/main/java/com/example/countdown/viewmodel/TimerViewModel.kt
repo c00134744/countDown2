@@ -245,7 +245,6 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
     
     override fun onCleared() {
         super.onCleared()
-        Log.d(TAG, "ViewModel onCleared")
         // 清理资源
         if (isServiceBound) {
             val context = getApplication<Application>()
