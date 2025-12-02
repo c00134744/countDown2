@@ -26,6 +26,7 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = TimerRepository(application)
     private var timerService: TimerForegroundService? = null
     private var isServiceBound = false
+    private var isBindingInProgress = false  // 防止重复绑定
     
     // 暴露计时器状态
     val timerState: StateFlow<TimerState> = repository.timerState
@@ -36,6 +37,7 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
             val binder = service as TimerForegroundService.TimerBinder
             timerService = binder.getService()
             isServiceBound = true
+            isBindingInProgress = false
             
             // 设置服务的状态更新回调
             timerService?.setOnTimerUpdateListener { remainingTimeMs ->
@@ -51,6 +53,7 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
         override fun onServiceDisconnected(name: ComponentName?) {
             timerService = null
             isServiceBound = false
+            isBindingInProgress = false
         }
     }
     
@@ -125,6 +128,8 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
      * 启动前台服务
      */
     private fun startTimerService() {
+        if (isServiceBound || isBindingInProgress) return  // 防止重复绑定
+        
         val context = getApplication<Application>()
         val currentState = repository.getCurrentState()
         
@@ -132,6 +137,8 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
             putExtra(TimerForegroundService.EXTRA_TOTAL_TIME, currentState.totalTimeMs)
             putExtra(TimerForegroundService.EXTRA_REMAINING_TIME, currentState.remainingTimeMs)
         }
+        
+        isBindingInProgress = true
         
         // 启动前台服务
         context.startForegroundService(intent)
@@ -210,7 +217,7 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
     fun onAppBackground() {
         // 如果正在计时，确保服务继续运行
         val currentState = repository.getCurrentState()
-        if (currentState.status == TimerStatus.RUNNING && !isServiceBound) {
+        if (currentState.status == TimerStatus.RUNNING && !isServiceBound && !isBindingInProgress) {
             startTimerService()
         }
     }
@@ -221,7 +228,8 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
     fun onAppForeground() {
         // 如果服务正在运行，重新绑定以获取最新状态
         val currentState = repository.getCurrentState()
-        if (currentState.status == TimerStatus.RUNNING && !isServiceBound) {
+        if (currentState.status == TimerStatus.RUNNING && !isServiceBound && !isBindingInProgress) {
+            isBindingInProgress = true
             val context = getApplication<Application>()
             val intent = Intent(context, TimerForegroundService::class.java)
             context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)

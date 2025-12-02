@@ -73,7 +73,6 @@ fun ControlButton(
                         TimerStatus.RUNNING -> onAction(TimerAction.PAUSE)
                         TimerStatus.PAUSED -> onAction(TimerAction.START)
                         TimerStatus.FINISHED -> onAction(TimerAction.RESET)
-                        else -> {}
                     }
                 },
                 onLongClick = {

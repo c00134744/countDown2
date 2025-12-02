@@ -64,17 +64,19 @@ fun CircularTimerView(
                             dragAngle = AngleCalculator.constrainAngle(angle)
                         },
                         onDragEnd = {
-                            if (isDragging) {
-                                isDragging = false
-                                val timeMs = AngleCalculator.angleToTime(dragAngle)
-                                onTimeSet(timeMs)
-                            }
+                            isDragging = false
+                            val timeMs = AngleCalculator.angleToTime(dragAngle)
+                            onTimeSet(timeMs)
+                        },
+                        onDragCancel = {
+                            // 处理拖拽被取消的情况（如来电、系统中断）
+                            isDragging = false
                         },
                         onDrag = { change, _ ->
                             if (!isDragging) return@detectDragGestures
                             
                             val angle = AngleCalculator.coordinateToAngle(
-                                change.position.x, change.position.y, 
+                                change.position.x, change.position.y,
                                 this.size.width / 2f, this.size.height / 2f
                             )
                             dragAngle = AngleCalculator.constrainAngle(angle)
