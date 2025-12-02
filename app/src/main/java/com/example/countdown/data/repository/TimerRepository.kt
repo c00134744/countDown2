@@ -168,7 +168,8 @@ class TimerRepository(private val context: Context) {
                 currentState.totalTimeMs
             )
             
-            val newAngle = AngleCalculator.progressToAngle(progress)
+            // 使用剩余时间计算角度，实现逆时针移动（从设置位置移动回起点）
+            val newAngle = AngleCalculator.timeToAngle(remainingTimeMs)
             
             val newState = currentState.copy(
                 remainingTimeMs = remainingTimeMs.coerceAtLeast(0L),
@@ -194,7 +195,7 @@ class TimerRepository(private val context: Context) {
             status = TimerStatus.FINISHED,
             remainingTimeMs = 0L,
             progress = 1f,
-            angle = AngleCalculator.progressToAngle(1f),
+            angle = AngleCalculator.START_ANGLE, // 完成时回到起点（135°）
             isScreenOn = true // 完成时保持屏幕亮起，显示完成状态
         )
         updateTimerState(newState)
