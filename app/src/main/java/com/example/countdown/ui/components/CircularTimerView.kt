@@ -175,16 +175,16 @@ private fun DrawScope.drawProgressTrack(
             }
         }
         else -> {
-            // 计时状态：显示已完成（灰色）和剩余（绿色）
+            // 计时状态：绿色（剩余）跟随控制按钮逆时针缩短
             val totalSweepAngle = (timerState.totalTimeMs.toFloat() / AngleCalculator.MAX_TIME_MS) * AngleCalculator.TOTAL_ANGLE
-            val progressSweepAngle = timerState.progress * totalSweepAngle
+            val remainingSweepAngle = (timerState.remainingTimeMs.toFloat() / AngleCalculator.MAX_TIME_MS) * AngleCalculator.TOTAL_ANGLE
             
-            // 已完成部分（灰色）
-            if (progressSweepAngle > 0) {
+            // 剩余部分（绿色）- 从起点到控制按钮位置
+            if (remainingSweepAngle > 0) {
                 drawArc(
-                    color = TimerGray,
+                    color = TimerGreen,
                     startAngle = AngleCalculator.START_ANGLE,
-                    sweepAngle = progressSweepAngle,
+                    sweepAngle = remainingSweepAngle,
                     useCenter = false,
                     topLeft = Offset(center.x - radius, center.y - radius),
                     size = androidx.compose.ui.geometry.Size(radius * 2, radius * 2),
@@ -192,13 +192,13 @@ private fun DrawScope.drawProgressTrack(
                 )
             }
             
-            // 剩余部分（绿色）
-            val remainingSweepAngle = totalSweepAngle - progressSweepAngle
-            if (remainingSweepAngle > 0) {
+            // 已完成部分（灰色）- 从控制按钮位置到原始设置位置
+            val completedSweepAngle = totalSweepAngle - remainingSweepAngle
+            if (completedSweepAngle > 0) {
                 drawArc(
-                    color = TimerGreen,
-                    startAngle = AngleCalculator.START_ANGLE + progressSweepAngle,
-                    sweepAngle = remainingSweepAngle,
+                    color = TimerGray,
+                    startAngle = AngleCalculator.START_ANGLE + remainingSweepAngle,
+                    sweepAngle = completedSweepAngle,
                     useCenter = false,
                     topLeft = Offset(center.x - radius, center.y - radius),
                     size = androidx.compose.ui.geometry.Size(radius * 2, radius * 2),
