@@ -128,8 +128,6 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
      * 启动前台服务
      */
     private fun startTimerService() {
-        if (isServiceBound || isBindingInProgress) return  // 防止重复绑定
-        
         val context = getApplication<Application>()
         val currentState = repository.getCurrentState()
         
@@ -138,13 +136,23 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
             putExtra(TimerForegroundService.EXTRA_REMAINING_TIME, currentState.remainingTimeMs)
         }
         
-        isBindingInProgress = true
+        // 无论是否已绑定，都启动服务以触发 onStartCommand (处理开始/恢复逻辑)
+        // startForegroundService 是幂等的，如果服务已运行，只会调用 onStartCommand
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start service: ${e.message}")
+        }
         
-        // 启动前台服务
-        context.startForegroundService(intent)
-        
-        // 绑定服务以进行通信
-        context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+        // 仅在未绑定且未在绑定过程中时进行绑定
+        if (!isServiceBound && !isBindingInProgress) {
+            isBindingInProgress = true
+            context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+        }
     }
     
     /**
