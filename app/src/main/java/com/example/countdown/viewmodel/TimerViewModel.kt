@@ -236,11 +236,16 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
     fun onAppForeground() {
         // 如果服务正在运行，重新绑定以获取最新状态
         val currentState = repository.getCurrentState()
-        if (currentState.status == TimerStatus.RUNNING && !isServiceBound && !isBindingInProgress) {
+        
+        // 尝试绑定服务以同步状态，无论本地状态如何（因为服务可能在后台运行中）
+        if (!isServiceBound && !isBindingInProgress) {
             isBindingInProgress = true
             val context = getApplication<Application>()
             val intent = Intent(context, TimerForegroundService::class.java)
             context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+        } else {
+             // 如果已经绑定，主动同步一次
+             syncWithService()
         }
     }
     
