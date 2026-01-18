@@ -89,11 +89,13 @@ class TimerForegroundService : Service() {
             
                 val currentSecond = millisUntilFinished / 1000
                 if (currentSecond != lastNotifiedSecond) { 
+                    // 仅当状态改变或每秒更新时发送通知
+                    // 注意：高频更新通知可能会被系统限制或导致卡顿
                     TimerNotificationManager.updateNotification(
                         this@TimerForegroundService,
                         serviceTotalTimeMs,
                         millisUntilFinished,
-                        status // status should be RUNNING here
+                        TimerStatus.RUNNING // Explicitly pass RUNNING status
                     )
                     lastNotifiedSecond = currentSecond
                 }

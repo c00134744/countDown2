@@ -73,6 +73,7 @@ object TimerNotificationManager {
             .setOngoing(currentStatus == TimerStatus.RUNNING || currentStatus == TimerStatus.PAUSED) // Notification is ongoing if running or paused
             .setContentIntent(pendingIntent)
             .setOnlyAlertOnce(true) // Prevents re-alerting on update
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .setSilent(true) // Updates should be silent, specific alerts (like finish) handled by service
             .build()
     }
